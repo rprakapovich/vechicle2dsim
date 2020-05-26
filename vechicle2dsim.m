@@ -14,7 +14,10 @@ set(handles.pushbutton_Pl,'Callback',{@pushbutton_Pl_Callback, handles})
 set(handles.pushbutton_Mn,'Callback',{@pushbutton_Mn_Callback, handles})
 set(handles.pushbutton_SSD,'Callback',{@pushbutton_SaveSensData_Callback, handles})
 set(handles.pushbutton_Start,'Callback',{@pushbutton_Start_Callback, handles})
-set(handles.pushbutton_Stop,'Callback',{@pushbutton_Stop_Callback, handles})
+set(handles.pushbutton_Stop,'Callback', {@pushbutton_Stop_Callback, handles})
+
+set(handles.pushbutton_Start,'Enable','off')
+set(handles.pushbutton_Stop, 'Enable','off')
 
 set(handles.slider_X,'Value',0)
 set(handles.slider_Y,'Value',0)
@@ -70,7 +73,9 @@ Autonomous_item = uimenu(...       % Print menu item
                         'HandleVisibility','callback', ...
                         'Callback', {@hAutonomous_Callback, handles});                    
                    
-                   
+ 
+addpath('scripts')
+
 guidata(H, handles)
 
 
@@ -79,6 +84,7 @@ guidata(H, handles)
 function hOpenMenuitemCallback(src, evt, handles)
 
 par = guidata(handles.win_main);
+    
     par.scope = 1;
     par.autonomous = 0;
     
@@ -91,7 +97,7 @@ par = guidata(handles.win_main);
     set(gcf,'CurrentAxes',par.AxSens_2)
     cla
     
-    [fname, path] = uigetfile({'*.mat'},'Select a File');
+    [fname, path] = uigetfile('*.mat','Pick a File', [pwd,'\maps\']);
     
     tmp = load([path, fname], 'map');
     par.map = tmp.map;
@@ -137,11 +143,11 @@ par = guidata(handles.win_main);
                            
     par.go = 1;
     
-    par.W1 = zeros(64,40);
-    par.W2 = zeros(2, 64);
-    par.ML = rot90(hadamard(64),2);
-    par.NUMC = 0;
-    par.inp = ones(40,3);
+%     par.W1 = zeros(64,40);
+%     par.W2 = zeros(2, 64);
+%     par.ML = rot90(hadamard(64),2);
+%     par.NUMC = 0;
+%     par.inp = ones(40,3);
     
     par.o = [];
        
@@ -413,10 +419,6 @@ function AxMap_Scope_Monitor(handles)
 
 par = guidata(handles.win_main);
 
-%     set(par.AxMap,'Xlim', par.map.Border(1) + [-1 1] * par.map.Border(3) * par.scope + (1 - par.scope) * par.map.Border(1) * get(par.slider_X,'Value') )
-%     set(par.AxMap,'Ylim', par.map.Border(2) + [-1 1] * par.map.Border(4) * par.scope + (1 - par.scope) * par.map.Border(2) * get(par.slider_Y,'Value') )
-%     set(par.AxMap,'Xlim', par.map.Border(1) + [-1 1] * par.WHL * par.scope + (1 - par.scope) * par.map.Border(1) * get(par.slider_X,'Value') * 2 * par.map.Border(3) / par.WHL )
-%     set(par.AxMap,'Ylim', par.map.Border(2) + [-1 1] * par.WHL * par.scope + (1 - par.scope) * par.map.Border(2) * get(par.slider_Y,'Value') * 2 * par.map.Border(4) / par.WHL) 
     set(par.AxMap,'Xlim', par.map.Border(1) + [-1 1] * par.WHL * par.scope + get(par.slider_X,'Value') * (par.map.Border(3) - par.WHL * par.scope) )
     set(par.AxMap,'Ylim', par.map.Border(2) + [-1 1] * par.WHL * par.scope + get(par.slider_Y,'Value') * (par.map.Border(4) - par.WHL * par.scope) )
 
@@ -519,17 +521,7 @@ end
 function [otvet] = trianglecrosscircle(trn, crc, d)
 
 otvet = 0;
-%     r12 = rct(1:2) + bias(ii,1:2).* rct(3:4);     % координаты первой точки стороны
-%     r34 = rct(1:2) + bias(ii + 1,1:2).* rct(3:4); % координаты второй точки стороны
-%     [tx(1), ty(1)] = linecrosscircle([trn(:,1)' trn(:,2)'], [r12, r34]); % пересечение линии и стороны прямоугольника   
 clc
-%     for jj = 1: 2:3
-%         td = linecrosscircle([trn(:,jj)' trn(:,jj+1)'], crc, d)
-%         if td && td < d
-%             otvet = 1;
-%             break
-%         end
-%     end
 
     for ii = 1: 3
         [x y] = circlecross(crc, [trn(:,ii)' trn(:,ii+1)']);
@@ -552,29 +544,6 @@ function [d, x, y] = linecrosscircle(ln, crc, d)
     x = ln(3); y = ln(4); % значение искомых крайних точек по умолчанию (если не будет преграды)
 
     [tx ty] = circlecross(crc, ln);
-
-% % %     if numel([tx ty]) > 0 && sqrt((tx(1) - x)^2 + (ty(1) - y)^2)  - d < 0.001
-% % % 
-% % %         if numel([tx ty]) == 2
-% % % 
-% % %             d = sqrt((tx - par.X)^2+(ty - par.Y)^2);
-% % %             x = tx;
-% % %             y = ty;
-% % %         elseif numel([tx ty]) == 4 
-% % % 
-% % %             tmp = sqrt((tx - ln(1)).^2+(ty - ln(2)).^2);
-% % % 
-% % %             if tmp(1) > tmp(2)
-% % %                 d = tmp(2);
-% % %                 x = tx(2);
-% % %                 y = ty(2);
-% % %             else
-% % %                 d = tmp(1);
-% % %                 x = tx(1);
-% % %                 y = ty(1);
-% % %             end
-% % %         end
-% % %     end
 
     a = sqrt((tx - ln(1)).^2 + (ty - ln(2)).^2);
     b = sqrt((tx - ln(3)).^2 + (ty - ln(4)).^2);
@@ -643,8 +612,6 @@ end
 
 
 
-
-
 function radiobutton_manu_Callback( src, evt, handles)
 
     set(handles.radiobutton_auto,'Value',0)
@@ -657,21 +624,16 @@ function radiobutton_auto_Callback( src, evt, handles)
 function pushbutton_Up_Callback(src, evt, handles)
 
 par = guidata(handles.win_main);
-%     tX = par.X;
-%     tY = par.Y;
     if ~par.autonomous
        par.X = par.X + par.stp * cos(par.rot); 
        par.Y = par.Y + par.stp * sin(par.rot); 
     end
 guidata(handles.win_main, par)
 RangeFinder(handles)
-% RotCheck(handles, tX, tY)
 
 function pushbutton_Dn_Callback(src, evt, handles)
 
 par = guidata(handles.win_main);
-%     tX = par.X;
-%     tY = par.Y;
     if ~par.autonomous
        par.X = par.X - par.stp * cos(par.rot); 
        par.Y = par.Y - par.stp * sin(par.rot);
@@ -679,7 +641,6 @@ par = guidata(handles.win_main);
 
 guidata(handles.win_main, par)
 RangeFinder(handles)
-% RotCheck(handles, tX, tY)
 
 function pushbutton_Rt_Callback(src, evt, handles)
 
@@ -749,47 +710,61 @@ RangeFinder(handles)
 
 
 function keys_contr(src,evt, handles)
-% t = evt.Key
-     switch evt.Key
-         case 'uparrow'
-             pushbutton_Up_Callback(src, evt, handles)
-   
-         case 'downarrow'
-             pushbutton_Dn_Callback(src, evt, handles)
-             
-         case 'rightarrow'
-             pushbutton_Rt_Callback(src, evt, handles)
-             
-         case 'leftarrow'
-             pushbutton_Lf_Callback(src, evt, handles)
-     end
+ switch evt.Key
+     case 'uparrow'
+         pushbutton_Up_Callback(src, evt, handles)
+
+     case 'downarrow'
+         pushbutton_Dn_Callback(src, evt, handles)
+
+     case 'rightarrow'
+         pushbutton_Rt_Callback(src, evt, handles)
+
+     case 'leftarrow'
+         pushbutton_Lf_Callback(src, evt, handles)
+ end
   
   
 function hManual_Callback(src, evt, handles)
 
 par = guidata(handles.win_main);
     par.autonomous = 0;
+    set(handles.pushbutton_Start,'Enable','off')
+    set(handles.pushbutton_Stop, 'Enable','off')
 guidata(handles.win_main, par)
 
 function hAutonomous_Callback(src, evt, handles)
 
 par = guidata(handles.win_main);
+
+    set(handles.pushbutton_Start,'BackGroundColor','green')
     par.autonomous = 1;
         
-    [fname path] = uigetfile('*.m');
+%     [fname path] = uigetfile('~/scripts/*.m', 'Pick a File');
+    [fname path] = uigetfile('*.m', 'Pick a File', [pwd,'\scripts\']);
     
     par.cntrl_sys = fname(1:find(fname == '.') - 1);
+    
+    set(handles.pushbutton_Start,'Enable','on')
+    set(handles.pushbutton_Stop, 'Enable','on')
     
 guidata(handles.win_main, par)
     
 function pushbutton_SaveSensData_Callback(src, evt, handles)
+
+if ~isfolder('data')
+    mkdir data
+end
+
+name_postfix = num2str(round(clock));
+name_postfix(find(name_postfix == ' ')) = [];
 
 [filename, pathname] = uiputfile( ...
                                 {'*.dat', 'Data files (*.dat)';
                                  '*.txt', 'Text files (*.txt)';...
                                  '*.*',   'All Files (*.*)'},...
                                  'Save as',...
-                                 'sensdata.dat');    
+                                 [pwd,'/data/sensdata_',name_postfix,'.dat']);    
 par = guidata(handles.win_main);
     
     dlmwrite([pathname, filename], get(par.LinSens,'YData'))
@@ -799,25 +774,27 @@ guidata(handles.win_main, par)
 
 function pushbutton_Start_Callback(src, evt, handles)
 par = guidata(handles.win_main);
+    set(handles.pushbutton_Start,'BackGroundColor', [0.94 0.94 0.94])
+    set(handles.pushbutton_Stop,'BackGroundColor','red')
+
     par.go = 1;
-while par.go == 1;
+while par.go == 1
     
 % =========================================================== 
-    PDD = par.otvet
+    PDD = par.otvet; % 8 binary corner zones of safety
 
 % =========================================================== 
-    LSD = get(par.LinSens,'YData')
+    LSD = get(par.LinSens,'YData'); % 2D lidar
 % ===========================================================    
+    eval(['p = ', par.cntrl_sys,'(PDD, LSD)'])
 
-
-% % p1 | p2 | Действие
-% % --------------------
-% % 0  | 0  | Стоять
-% % 0  | 1  | Налево
-% % 1  | 0  | Направо 
-% % 1  | 1  | Вперёд
+% %     p1 | p2 | signals/moving
+% %     --------------------
+% %     0  | 0  | stop
+% %     0  | 1  | left
+% %     1  | 0  | right 
+% %     1  | 1  | forward
         
-        p = [0 0];
         
         par.rot = par.rot + (p(2) - p(1)) * par.alf_step;
         par.X = par.X + (p(2) * p(1)) * par.stp * cos(par.rot); 
@@ -830,16 +807,15 @@ while par.go == 1;
         p(1) = 0;
         p(2) = 0;
      
-%     guidata(handles.win_main, par)
     par = guidata(handles.win_main);
 end
 
-
-
-
 function pushbutton_Stop_Callback(src, evt, handles)
 par = guidata(handles.win_main);
-    
+    set(handles.pushbutton_Stop,'BackGroundColor', [0.94 0.94 0.94])
+    set(handles.pushbutton_Start,'BackGroundColor','green')
+
+
     par.go = 0;
     
 guidata(handles.win_main, par)
@@ -849,7 +825,6 @@ function slider_coner_Callback(src, evt, handles)
 
 par = guidata(handles.win_main);
     set(par.edit_coner,'String',num2str(round(get(par.slider_coner,'Value'))))
-%     t = get(par.slider_coner,'Value')
     par.coner = get(par.slider_coner,'Value') * pi / 360;
     par.alfa =  2 * par.coner / par.num;
 guidata(handles.win_main, par)
@@ -857,4 +832,19 @@ RangeFinder(handles)
 
 function hPrintMenuitemCallback(src, evt, handles)
 par = guidata(handles.win_main);
-saveas(gcf,'screenshort.bmp')
+% saveas(gcf,'screenshort.bmp')
+% F = getframe(par.AxMap);
+% Image = frame2im(F);
+% imwrite(Image, 'Image.jpg')
+
+if ~isfolder('print')
+    mkdir print
+end
+
+name_postfix = num2str(round(clock));
+name_postfix(find(name_postfix == ' ')) = [];
+set(gcf,'PaperPositionMode','auto')
+set(gcf,'PaperOrientation', 'landscape')
+set(gcf,'PaperType', 'a4')
+print(['print\Vechicle2DSim_',name_postfix],'-dpdf','-fillpage')
+
